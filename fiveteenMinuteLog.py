@@ -9,6 +9,9 @@
 # connecting multiple temperature sensors
 # http://www.reuk.co.uk/wordpress/raspberry-pi/connect-multiple-temperature-sensors-with-raspberry-pi/
 
+### On logging Raspberry Pi system status
+# From: https://www.raspberrypi.org/forums/viewtopic.php?t=22180
+
 ### API References
 # https://www.solaredge.com/sites/default/files/se_monitoring_api.pdf
 # https://www.ambientweather.com/community.html
@@ -49,6 +52,7 @@ def read_temp_rawC():
     lines = f.readlines()
     f.close()
     return lines
+
 #Celsius/Centigrade is selected, change return temp_c to return temp_f for Fahrenheit	
 def read_tempA():
     lines = read_temp_rawA()
