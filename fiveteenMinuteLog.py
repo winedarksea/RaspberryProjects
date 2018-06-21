@@ -24,7 +24,8 @@ import datetime
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import configparser
+import ConfigParser as configparser
+# import configparser
 import requests
 
 
@@ -140,7 +141,7 @@ sys.exit(1)
 #Connecting to Google Docs to write first measurement to spreadsheet
 def login_open_sheet(spreadsheet):
 	try:
-        gc = gspread.authorize(credentials)
+                gc = gspread.authorize(credentials)
 		worksheet = gc.open(spreadsheet).sheet1
 		return worksheet
 	except:
@@ -201,13 +202,13 @@ def ConfigSectionMap(section):
 Config = configparser.ConfigParser()
 # Env file location on laptop versus raspberry
 #Config.read(r"C:\Users\Owner\Documents\Personal\Projects\WeatherStation\keyFiles.ini")
-Config.read("~\RaspberryProjects\keyFiles.ini")
+Config.read("/home/pi/RaspberryProjects/keyFiles.ini")
 # Get keys for Solar Edge
-SE_apiKey = ConfigSectionMap("APIkeys")['se_apikey']
+SE_apiKey = ConfigSectionMap('APIkeys')['se_apikey']
 SE_site = ConfigSectionMap("APIkeys")['se_site']
 # Get AmbientWeather api keys
 AW_apiKey = ConfigSectionMap("APIkeys")['aw_apikey']
-AW_applicationKey = ConfigSectionMap('APIkeys')['aw_applicationkey']
+AW_applicationKey = ConfigSectionMap("APIkeys")['aw_applicationkey']
 
 
 # Get current solar panel data from Solar Edge
@@ -312,7 +313,7 @@ except:
 try:
     next_row = next_available_row(worksheet)
     worksheet.update_acell("A{}".format(next_row), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    worksheet.update_acell("B{}".format(next_row), "test5")
+    worksheet.update_acell("B{}".format(next_row), "test6")
     worksheet.update_acell("C{}".format(next_row), CPU_temp)
     worksheet.update_acell("D{}".format(next_row), CPU_Pct)
     worksheet.update_acell("E{}".format(next_row), DISK_used)
@@ -364,7 +365,16 @@ except:
 # Record to local storage as well
 try:
     with open("FiveteenMinuteData.csv", "a") as myfile:
-        myfile.write("\n{}, {}, {}, {}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"test", CPU_temp, CPU_Pct, DISK_used, tempA, tempB, tempC))
+        myfile.write("\n{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"test", CPU_temp, CPU_Pct,
+                DISK_used, tempA, tempB, tempC,solar_daily_watt_hours,solar_current_watts,
+                reads_water_temp,reads_discharge,zumbro_gage_height,reads_sensor_velocity,
+                zumbro_water_temp, zumbro_discharge,zumbro_gage_height,zumbro_turbidity,
+                station_winddir,station_windspeedmph,station_windgustmph,station_maxdailygust,station_tempf,
+                station_hourlyrainin,station_eventrainin,station_dailyrainin,station_weeklyrainin,
+                station_monthlyrainin,station_totalrainin,station_baromrelin,station_baromabsin,
+                station_humidity, station_tempinf,station_humidityin,station_uv,station_solarradiation,
+                station_feelsLike,station_dewPoint,station_lastRain,station_date,station_dateutc))
 except:
     with open("FiveteenMinuteData.csv", "a") as myfile:
         myfile.write("\n{}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"log error"))
