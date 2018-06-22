@@ -226,9 +226,6 @@ if solar_daily_watt_hours == None:
     solar_daily_watt_hours = 0
 
 # Current Power Generation
-startTime = startDate + "%20" + str(datetime.datetime.now().hour) + ":" + str((datetime.datetime.now()).minute) + ":" + str((datetime.datetime.now()- datetime.timedelta(seconds = 1)).second)
-endTime = endDate + "%20" + str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) + ":" + str(datetime.datetime.now().second)
-# SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/power.json?startTime=" + startTime + "&endTime=" + endTime + "&api_key=" + SE_apiKey
 SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/overview.json?" + "api_key=" + SE_apiKey
 # in Watts
 try:
@@ -237,7 +234,17 @@ except:
     solar_current_watts = "Error"
 if solar_current_watts == None:
     solar_current_watts = 0
-#print(solar_current_watts)
+
+# Additional Solar Records:
+startTime = startDate + "%20" + str(datetime.datetime.now().hour) + ":" + str((datetime.datetime.now()).minute) + ":" + str((datetime.datetime.now()- datetime.timedelta(seconds = 1)).second)
+endTime = endDate + "%20" + str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) + ":" + str(datetime.datetime.now().second)
+SE_power_urlALT = "https://monitoringapi.solaredge.com/site/" + SE_site + "/power.json?startTime=" + startTime + "&endTime=" + endTime + "&api_key=" + SE_apiKey
+try:
+    solar_current_wattsALT = requests.get(SE_power_urlALT).json()['power']['values'][0]['value']
+except:
+    solar_current_wattsALT = "Error"
+if solar_current_wattsALT == None:
+    solar_current_wattsALT = 0
 
 # Get Weather Station Data
 AW_url = "https://api.ambientweather.net/v1/devices?apiKey=" + AW_apiKey + "&&applicationKey=" + AW_applicationKey
@@ -267,8 +274,8 @@ station_humidity = station_dict[0]['lastData']['humidity']
 station_tempinf = station_dict[0]['lastData']['tempinf'] #indoor temperature
 #if station_tempinf is float:
 try:
-    station_tempinC = round(float((float(station_tempinf) - 32.0) * (5/9)),1) # to Celsius for consistency
-    station_tempC =  ((station_tempf - 32) * (5/9)) # to Celsius for consistency
+    station_tempinC = round((((station_tempinf) - 32.0) * (0.5555555556)),1) # to Celsius for consistency
+    station_tempC =  station_tempf # to Celsius for consistency
 except:
     station_tempinC = "Error"
     station_tempC = 'Error'
@@ -301,7 +308,7 @@ try:
     reads_dict = reads.json()
     #reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']
     reads_water_temp = float(reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']) # degrees F
-    reads_water_temp = round((reads_water_temp - 32.0) * (5/9),1) # to Celsius for consistency
+    #reads_water_temp = round((reads_water_temp - 32.0) * (5/9),1) # to Celsius for consistency
     reads_discharge = float(reads_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
     reads_gage_height = float(reads_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
     reads_sensor_velocity = float(reads_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # feet per second
@@ -329,37 +336,39 @@ try:
     worksheet.update_acell("H{}".format(next_row), tempC)
     worksheet.update_acell("I{}".format(next_row), solar_daily_watt_hours)
     worksheet.update_acell("J{}".format(next_row), solar_current_watts)
-    worksheet.update_acell("K{}".format(next_row), reads_water_temp)
-    worksheet.update_acell("L{}".format(next_row), reads_discharge)
-    worksheet.update_acell("M{}".format(next_row), reads_gage_height)
-    worksheet.update_acell("N{}".format(next_row), reads_sensor_velocity)
-    worksheet.update_acell("O{}".format(next_row), zumbro_water_temp)
-    worksheet.update_acell("P{}".format(next_row), zumbro_discharge)
-    worksheet.update_acell("Q{}".format(next_row), zumbro_gage_height)
-    worksheet.update_acell("R{}".format(next_row), zumbro_turbidity)
-    worksheet.update_acell("S{}".format(next_row), station_winddir)
-    worksheet.update_acell("T{}".format(next_row), station_windspeedmph)
-    worksheet.update_acell("U{}".format(next_row), station_windgustmph)
-    worksheet.update_acell("V{}".format(next_row), station_maxdailygust)
-    worksheet.update_acell("W{}".format(next_row), station_tempC)
-    worksheet.update_acell("X{}".format(next_row), station_hourlyrainin)
-    worksheet.update_acell("Y{}".format(next_row), station_eventrainin)
-    worksheet.update_acell("Z{}".format(next_row), station_dailyrainin)
-    worksheet.update_acell("AA{}".format(next_row), station_weeklyrainin)
-    worksheet.update_acell("AB{}".format(next_row), station_monthlyrainin)
-    worksheet.update_acell("AC{}".format(next_row), station_totalrainin)
-    worksheet.update_acell("AD{}".format(next_row), station_baromrelin)
-    worksheet.update_acell("AE{}".format(next_row), station_baromabsin)
-    worksheet.update_acell("AF{}".format(next_row), station_humidity)
-    worksheet.update_acell("AG{}".format(next_row), station_tempinC)
-    worksheet.update_acell("AH{}".format(next_row), station_humidityin)
-    worksheet.update_acell("AI{}".format(next_row), station_uv)
-    worksheet.update_acell("AJ{}".format(next_row), station_solarradiation)
-    worksheet.update_acell("AK{}".format(next_row), station_feelsLike)
-    worksheet.update_acell("AL{}".format(next_row), station_dewPoint)
-    worksheet.update_acell("AM{}".format(next_row), station_lastRain)
-    worksheet.update_acell("AN{}".format(next_row), station_date)
-    worksheet.update_acell("AO{}".format(next_row), station_dateutc)
+    worksheet.update_acell("AP{}".format(next_row), solar_current_wattsALT)
+    worksheet.update_acell("L{}".format(next_row), reads_water_temp)
+    worksheet.update_acell("M{}".format(next_row), reads_discharge)
+    worksheet.update_acell("N{}".format(next_row), reads_gage_height)
+    worksheet.update_acell("O{}".format(next_row), reads_sensor_velocity)
+    worksheet.update_acell("P{}".format(next_row), zumbro_water_temp)
+    worksheet.update_acell("Q{}".format(next_row), zumbro_discharge)
+    worksheet.update_acell("R{}".format(next_row), zumbro_gage_height)
+    worksheet.update_acell("S{}".format(next_row), zumbro_turbidity)
+    worksheet.update_acell("T{}".format(next_row), station_winddir)
+    worksheet.update_acell("U{}".format(next_row), station_windspeedmph)
+    worksheet.update_acell("V{}".format(next_row), station_windgustmph)
+    worksheet.update_acell("W{}".format(next_row), station_maxdailygust)
+    worksheet.update_acell("X{}".format(next_row), station_tempC)
+    worksheet.update_acell("Y{}".format(next_row), station_hourlyrainin)
+    worksheet.update_acell("Z{}".format(next_row), station_eventrainin)
+    worksheet.update_acell("AA{}".format(next_row), station_dailyrainin)
+    worksheet.update_acell("AB{}".format(next_row), station_weeklyrainin)
+    worksheet.update_acell("AC{}".format(next_row), station_monthlyrainin)
+    worksheet.update_acell("AD{}".format(next_row), station_totalrainin)
+    worksheet.update_acell("AE{}".format(next_row), station_baromrelin)
+    worksheet.update_acell("AF{}".format(next_row), station_baromabsin)
+    worksheet.update_acell("AG{}".format(next_row), station_humidity)
+    worksheet.update_acell("AH{}".format(next_row), station_tempinC)
+    worksheet.update_acell("AI{}".format(next_row), station_humidityin)
+    worksheet.update_acell("AJ{}".format(next_row), station_uv)
+    worksheet.update_acell("AK{}".format(next_row), station_solarradiation)
+    worksheet.update_acell("AL{}".format(next_row), station_feelsLike)
+    worksheet.update_acell("AM{}".format(next_row), station_dewPoint)
+    worksheet.update_acell("AN{}".format(next_row), station_lastRain)
+    worksheet.update_acell("AO{}".format(next_row), station_date)
+    worksheet.update_acell("AP{}".format(next_row), station_dateutc)
+    
     #worksheet.append_row((datetime.datetime.now(),"test", read_tempA(), read_tempB(), read_tempC()))
 except:
     # Error appending data, most likely because credentials are stale.
