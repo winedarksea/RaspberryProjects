@@ -267,8 +267,8 @@ station_humidity = station_dict[0]['lastData']['humidity']
 station_tempinf = station_dict[0]['lastData']['tempinf'] #indoor temperature
 #if station_tempinf is float:
 try:
-    station_tempinC = round((station_tempinf - 32) * (5/9),1) # to Celsius for consistency
-    station_tempC = station_dict[0]['lastData']['tempf']
+    station_tempinC = round(float((float(station_tempinf) - 32.0) * (5/9)),1) # to Celsius for consistency
+    station_tempC =  ((station_tempf - 32) * (5/9)) # to Celsius for consistency
 except:
     station_tempinC = "Error"
     station_tempC = 'Error'
@@ -301,7 +301,7 @@ try:
     reads_dict = reads.json()
     #reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']
     reads_water_temp = float(reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']) # degrees F
-    reads_water_temp = round((reads_water_temp - 32) * (5/9),1) # to Celsius for consistency
+    reads_water_temp = round((reads_water_temp - 32.0) * (5/9),1) # to Celsius for consistency
     reads_discharge = float(reads_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
     reads_gage_height = float(reads_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
     reads_sensor_velocity = float(reads_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # feet per second

@@ -42,3 +42,9 @@ Opposite: Dalinar
  https://github.com/ambient-weather/api-docs  
  https://help.waterdata.usgs.gov/faq/automated-retrievals    
  *using both Solar Edge and Ambient Weather require owning one of their systems*  
+
+
+#### For Webcam Using a PS3Eye  
+https://www.raspberrypi.org/forums/viewtopic.php?t=31003  
+https://www.raspberrypi.org/documentation/usage/webcams/  
+Currently running a time-lapse photo capture, again using Task Scheduler.  
