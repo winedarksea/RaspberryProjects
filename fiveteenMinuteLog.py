@@ -129,6 +129,7 @@ scope = ['https://spreadsheets.google.com/feeds',
 credentials = ServiceAccountCredentials.from_json_keyfile_name('FarmSensor-dc6049b112a2.json', scope)
 
 '''
+# Test code
 gc = gspread.authorize(credentials)
 wks = gc.open("FarmWeather").sheet1
 next_row = next_available_row(wks)
@@ -146,7 +147,7 @@ def login_open_sheet(spreadsheet):
 		return worksheet
 	except:
 		print 'Unable to login and get spreadsheet.  Check credentials, spreadsheet name.'
-		sys.exit(1)
+		#sys.exit(1)
 
 # written this way for a code that was supposed to time.sleep() itself between logs
 worksheet = None
@@ -170,15 +171,15 @@ except:
 try:
     tempA = read_tempA()
 except:
-    tempA = "SensorDown"
+    tempA = "Error"
 try:
     tempB = read_tempB()
 except:
-    tempB = "SensorDown"
+    tempB = "Error"
 try:
     tempC = read_tempC()
 except:
-    tempC = "SensorDown"
+    tempC = "Error"
 
 ###########################################################
 # Part Two: Accessing internet loaded data
@@ -251,8 +252,8 @@ station_windspeedmph = station_dict[0]['lastData']['windspeedmph']
 station_windgustmph = station_dict[0]['lastData']['windgustmph']
 station_maxdailygust = station_dict[0]['lastData']['maxdailygust']
 station_tempf = station_dict[0]['lastData']['tempf']
-if station_tempf is float:
-    station_tempf = round((station_tempf - 32) * (5/9),1) # to Celsius for consistency
+#if station_tempf is float:
+#    station_tempf = round((station_tempf - 32) * (5/9),1) # to Celsius for consistency
 station_hourlyrainin = station_dict[0]['lastData']['hourlyrainin']
 station_eventrainin = station_dict[0]['lastData']['eventrainin']
 station_dailyrainin = station_dict[0]['lastData']['dailyrainin']
@@ -263,8 +264,13 @@ station_baromrelin = station_dict[0]['lastData']['baromrelin']
 station_baromabsin = station_dict[0]['lastData']['baromabsin']
 station_humidity = station_dict[0]['lastData']['humidity']
 station_tempinf = station_dict[0]['lastData']['tempinf'] #indoor temperature
-if station_tempinf is float:
-    station_tempinf = round((station_tempinf - 32) * (5/9),1) # to Celsius for consistency
+#if station_tempinf is float:
+try:
+    station_tempinC = round((station_tempinf - 32) * (5/9),1) # to Celsius for consistency
+    station_tempC = station_dict[0]['lastData']['tempf']
+except:
+    station_tempinC = "Error"
+    station_tempC = 'Error'
 station_humidityin = station_dict[0]['lastData']['humidityin'] #indoor humidity
 station_uv = station_dict[0]['lastData']['uv']
 station_solarradiation = station_dict[0]['lastData']['solarradiation']
@@ -334,7 +340,7 @@ try:
     worksheet.update_acell("T{}".format(next_row), station_windspeedmph)
     worksheet.update_acell("U{}".format(next_row), station_windgustmph)
     worksheet.update_acell("V{}".format(next_row), station_maxdailygust)
-    worksheet.update_acell("W{}".format(next_row), station_tempf)
+    worksheet.update_acell("W{}".format(next_row), station_tempC)
     worksheet.update_acell("X{}".format(next_row), station_hourlyrainin)
     worksheet.update_acell("Y{}".format(next_row), station_eventrainin)
     worksheet.update_acell("Z{}".format(next_row), station_dailyrainin)
@@ -344,7 +350,7 @@ try:
     worksheet.update_acell("AD{}".format(next_row), station_baromrelin)
     worksheet.update_acell("AE{}".format(next_row), station_baromabsin)
     worksheet.update_acell("AF{}".format(next_row), station_humidity)
-    worksheet.update_acell("AG{}".format(next_row), station_tempinf)
+    worksheet.update_acell("AG{}".format(next_row), station_tempinC)
     worksheet.update_acell("AH{}".format(next_row), station_humidityin)
     worksheet.update_acell("AI{}".format(next_row), station_uv)
     worksheet.update_acell("AJ{}".format(next_row), station_solarradiation)
@@ -370,12 +376,14 @@ try:
                 DISK_used, tempA, tempB, tempC,solar_daily_watt_hours,solar_current_watts,
                 reads_water_temp,reads_discharge,zumbro_gage_height,reads_sensor_velocity,
                 zumbro_water_temp, zumbro_discharge,zumbro_gage_height,zumbro_turbidity,
-                station_winddir,station_windspeedmph,station_windgustmph,station_maxdailygust,station_tempf,
+                station_winddir,station_windspeedmph,station_windgustmph,station_maxdailygust,station_tempC,
                 station_hourlyrainin,station_eventrainin,station_dailyrainin,station_weeklyrainin,
                 station_monthlyrainin,station_totalrainin,station_baromrelin,station_baromabsin,
-                station_humidity, station_tempinf,station_humidityin,station_uv,station_solarradiation,
+                station_humidity, station_tempinC,station_humidityin,station_uv,station_solarradiation,
                 station_feelsLike,station_dewPoint,station_lastRain,station_date,station_dateutc))
 except:
     with open("FiveteenMinuteData.csv", "a") as myfile:
         myfile.write("\n{}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"log error"))
+
+# Just to be clear:
 sys.exit(0)
