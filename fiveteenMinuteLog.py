@@ -221,19 +221,20 @@ SE_energy_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/energy
 try:
     solar_daily_watt_hours = requests.get(SE_energy_url).json()['energy']['values'][0]['value']
 except:
-    solar_daily_watt_hours = "Connection Error"
+    solar_daily_watt_hours = "Error"
 if solar_daily_watt_hours == None:
     solar_daily_watt_hours = 0
 
 # Current Power Generation
 startTime = startDate + "%20" + str(datetime.datetime.now().hour) + ":" + str((datetime.datetime.now()).minute) + ":" + str((datetime.datetime.now()- datetime.timedelta(seconds = 1)).second)
 endTime = endDate + "%20" + str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) + ":" + str(datetime.datetime.now().second)
-SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/power.json?startTime=" + startTime + "&endTime=" + endTime + "&api_key=" + SE_apiKey
-# Watts
+# SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/power.json?startTime=" + startTime + "&endTime=" + endTime + "&api_key=" + SE_apiKey
+SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/overview.json?" + "api_key=" + SE_apiKey
+# in Watts
 try:
-    solar_current_watts = requests.get(SE_power_url).json()['power']['values'][0]['value']
+    solar_current_watts = requests.get(SE_power_url).json()['overview']['currentPower']['power']
 except:
-    solar_current_watts = "Connection Error"
+    solar_current_watts = "Error"
 if solar_current_watts == None:
     solar_current_watts = 0
 #print(solar_current_watts)
@@ -294,6 +295,7 @@ except:
     zumbro_discharge = "Error"
     zumbro_gage_height = "Error"
     zumbro_turbidity = "Error"
+reads_water_temp = 0
 try:
     reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05355341&format=json')
     reads_dict = reads.json()
@@ -303,7 +305,6 @@ try:
     reads_discharge = float(reads_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
     reads_gage_height = float(reads_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
     reads_sensor_velocity = float(reads_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # feet per second
-
 except:
     reads_water_temp = "Error"
     reads_discharge = "Error"
