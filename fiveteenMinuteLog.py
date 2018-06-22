@@ -275,7 +275,7 @@ station_tempinf = station_dict[0]['lastData']['tempinf'] #indoor temperature
 #if station_tempinf is float:
 try:
     station_tempinC = round((((station_tempinf) - 32.0) * (0.5555555556)),1) # to Celsius for consistency
-    station_tempC =  station_tempf # to Celsius for consistency
+    station_tempC =  round((((station_tempf) - 32.0) * (0.5555555556)),1) # to Celsius for consistency
 except:
     station_tempinC = "Error"
     station_tempC = 'Error'
@@ -302,13 +302,13 @@ except:
     zumbro_discharge = "Error"
     zumbro_gage_height = "Error"
     zumbro_turbidity = "Error"
-reads_water_temp = 0
+
 try:
     reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05355341&format=json')
     reads_dict = reads.json()
     #reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']
     reads_water_temp = float(reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']) # degrees F
-    #reads_water_temp = round((reads_water_temp - 32.0) * (5/9),1) # to Celsius for consistency
+    reads_water_temp = round((reads_water_temp - 32.0) * (0.555555556),1) # to Celsius for consistency
     reads_discharge = float(reads_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
     reads_gage_height = float(reads_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
     reads_sensor_velocity = float(reads_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # feet per second
@@ -336,7 +336,7 @@ try:
     worksheet.update_acell("H{}".format(next_row), tempC)
     worksheet.update_acell("I{}".format(next_row), solar_daily_watt_hours)
     worksheet.update_acell("J{}".format(next_row), solar_current_watts)
-    worksheet.update_acell("AP{}".format(next_row), solar_current_wattsALT)
+    worksheet.update_acell("K{}".format(next_row), solar_current_wattsALT)
     worksheet.update_acell("L{}".format(next_row), reads_water_temp)
     worksheet.update_acell("M{}".format(next_row), reads_discharge)
     worksheet.update_acell("N{}".format(next_row), reads_gage_height)
