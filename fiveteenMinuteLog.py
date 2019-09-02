@@ -18,13 +18,13 @@
 # https://github.com/ambient-weather/api-docs
 # https://help.waterdata.usgs.gov/faq/automated-retrievals
 
-import sys
+# import sys
 import time
 import datetime
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import ConfigParser as configparser
+import configparser as configparser
 # import configparser
 import requests
 
@@ -117,7 +117,7 @@ def getDiskSpace():
 
 #helper function for Google log, to reach last row
 def next_available_row(worksheet):
-    str_list = filter(None, worksheet.col_values(1))  # fastest
+    str_list = list(filter(None, worksheet.col_values(1)))
     return str(len(str_list)+1)
 
 # Define destinations
@@ -141,13 +141,12 @@ sys.exit(1)
 
 #Connecting to Google Docs to write first measurement to spreadsheet
 def login_open_sheet(spreadsheet):
-	try:
-                gc = gspread.authorize(credentials)
-		worksheet = gc.open(spreadsheet).sheet1
-		return worksheet
-	except:
-		print 'Unable to login and get spreadsheet.  Check credentials, spreadsheet name.'
-		#sys.exit(1)
+    try:
+        gc = gspread.authorize(credentials)
+        worksheet = gc.open(spreadsheet).sheet1
+        return worksheet
+    except:
+        print('Unable to login and get spreadsheet.  Check credentials, spreadsheet name.')
 
 # written this way for a code that was supposed to time.sleep() itself between logs
 worksheet = None
@@ -192,7 +191,7 @@ def ConfigSectionMap(section):
         try:
             dict1[option] = Config.get(section, option)
             if dict1[option] == -1:
-                DebugPrint("skip: %s" % option)
+                print("skip: %s" % option)
         except:
             print("exception on %s!" % option)
             dict1[option] = None
@@ -203,7 +202,9 @@ def ConfigSectionMap(section):
 Config = configparser.ConfigParser()
 # Env file location on laptop versus raspberry
 #Config.read(r"C:\Users\Owner\Documents\Personal\Projects\WeatherStation\keyFiles.ini")
-Config.read("/home/pi/RaspberryProjects/keyFiles.ini")
+
+#Config.read("/home/pi/RaspberryProjects/keyFiles.ini")
+Config.read("keyFiles.ini")
 # Get keys for Solar Edge
 SE_apiKey = ConfigSectionMap('APIkeys')['se_apikey']
 SE_site = ConfigSectionMap("APIkeys")['se_site']
@@ -293,10 +294,18 @@ station_dateutc = station_dict[0]['lastData']['dateutc']
 try:
     zumbro = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05374900&format=json')
     zumbro_dict = zumbro.json()
-    zumbro_water_temp = float(zumbro_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']) # degrees C
-    zumbro_discharge = float(zumbro_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
-    zumbro_gage_height = float(zumbro_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
-    zumbro_turbidity = float(zumbro_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # formazin nephelometric units (FNU)
+    
+    zumbro_water_temp = "Error"
+    zumbro_discharge = "Error"
+    zumbro_gage_height = "Error"
+    zumbro_turbidity = "Error"
+    for num_vars in range(len(zumbro_dict['value']['timeSeries'])):
+        varName = zumbro_dict['value']['timeSeries'][num_vars]['variable']['variableName']
+        if varName == 'Gage height, ft':
+            zumbro_gage_height = float(zumbro_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # height in feet
+        if varName == 'Streamflow, ft&#179;/s':
+            zumbro_discharge = float(zumbro_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # cubic feet per second
+
 except:
     zumbro_water_temp = "Error"
     zumbro_discharge = "Error"
@@ -304,14 +313,22 @@ except:
     zumbro_turbidity = "Error"
 
 try:
-    reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05355341&format=json')
+    # reads stations decommissioned, now using Prescott, WI
+    reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05344500&format=json')
+    reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05355260&format=json')
     reads_dict = reads.json()
-    #reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']
-    reads_water_temp = float(reads_dict['value']['timeSeries'][0]['values'][0]['value'][0]['value']) # degrees F
-    reads_water_temp = round((reads_water_temp - 32.0) * (0.555555556),1) # to Celsius for consistency
-    reads_discharge = float(reads_dict['value']['timeSeries'][1]['values'][0]['value'][0]['value']) # cubic feet per second
-    reads_gage_height = float(reads_dict['value']['timeSeries'][2]['values'][0]['value'][0]['value']) # height in feet
-    reads_sensor_velocity = float(reads_dict['value']['timeSeries'][3]['values'][0]['value'][0]['value']) # feet per second
+    
+    reads_water_temp = "Error"
+    reads_discharge = "Error"
+    reads_gage_height = "Error"
+    reads_sensor_velocity = "Error"
+    for num_vars in range(len(reads_dict['value']['timeSeries'])):
+        varName = reads_dict['value']['timeSeries'][num_vars]['variable']['variableName']
+        if varName == 'Gage height, ft':
+            reads_gage_height = float(reads_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # height in feet
+        if varName == 'Streamflow, ft&#179;/s':
+            reads_discharge = float(reads_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # cubic feet per second
+
 except:
     reads_water_temp = "Error"
     reads_discharge = "Error"
@@ -326,8 +343,9 @@ except:
 # it's a bit slower than 'append row' but also more flexible to edit
 try:
     next_row = next_available_row(worksheet)
+    worksheet.append_row(["temp"])
     worksheet.update_acell("A{}".format(next_row), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    worksheet.update_acell("B{}".format(next_row), "test6")
+    worksheet.update_acell("B{}".format(next_row), "prod1")
     worksheet.update_acell("C{}".format(next_row), CPU_temp)
     worksheet.update_acell("D{}".format(next_row), CPU_Pct)
     worksheet.update_acell("E{}".format(next_row), DISK_used)
@@ -373,7 +391,7 @@ try:
 except:
     # Error appending data, most likely because credentials are stale.
     # Null out the worksheet so a login is performed at the top of the loop.
-    print 'Append error'
+    print('Append error')
     worksheet = None
 
 
@@ -396,4 +414,4 @@ except:
         myfile.write("\n{}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"log error"))
 
 # Just to be clear:
-sys.exit(0)
+# sys.exit(0)
