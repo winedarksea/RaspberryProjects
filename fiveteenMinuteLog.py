@@ -30,6 +30,8 @@ import requests
 
 print(os.getcwd())
 
+os.chdir("/home/colin/FarmLog")
+
 # opening sensor drivers for temperature probes
 try:
     os.system('modprobe w1-gpio')
@@ -407,7 +409,7 @@ except:
 try:
     with open("FiveteenMinuteData.csv", "a") as myfile:
         myfile.write("\n{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"test", CPU_temp, CPU_Pct,
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"test2", memoryUsage, CPU_Pct,
                 DISK_used, tempA, tempB, tempC,solar_daily_watt_hours,solar_current_watts,
                 reads_water_temp,reads_discharge,zumbro_gage_height,reads_sensor_velocity,
                 zumbro_water_temp, zumbro_discharge,zumbro_gage_height,zumbro_turbidity,
