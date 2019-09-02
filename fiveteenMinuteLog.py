@@ -28,11 +28,14 @@ import configparser as configparser
 # import configparser
 import requests
 
+print(os.getcwd())
 
 # opening sensor drivers for temperature probes
-os.system('modprobe w1-gpio')
-os.system('modprobe w1-therm')
- 
+try:
+    os.system('modprobe w1-gpio')
+    os.system('modprobe w1-therm')
+except:
+    pass
 # Create functions to access temperature probe readings
 def read_temp_rawA():
     device_file = '/sys/bus/w1/devices/28-04173060c6ff/w1_slave'
@@ -154,6 +157,10 @@ if worksheet is None:
     worksheet = login_open_sheet(GDOCS_SPREADSHEET_NAME)
 
 # Record data from system and sensors
+try:
+    memoryUsage = os.popen('''awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{print 100-100*a/t"%"}' /proc/meminfo''').readline().replace("\n","")
+except:
+    memoryUsage = 'Error'
 try:
     CPU_temp = getCPUtemperature()
 except:
@@ -346,7 +353,7 @@ try:
     worksheet.append_row(["temp"])
     worksheet.update_acell("A{}".format(next_row), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     worksheet.update_acell("B{}".format(next_row), "prod1")
-    worksheet.update_acell("C{}".format(next_row), CPU_temp)
+    worksheet.update_acell("C{}".format(next_row), memoryUsage)
     worksheet.update_acell("D{}".format(next_row), CPU_Pct)
     worksheet.update_acell("E{}".format(next_row), DISK_used)
     worksheet.update_acell("F{}".format(next_row), tempA)
