@@ -23,86 +23,13 @@ import time
 import datetime
 import os
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import configparser as configparser
 # import configparser
 import requests
 
-print(os.getcwd())
-
 os.chdir("/home/colin/FarmLog")
 
-# opening sensor drivers for temperature probes
-try:
-    os.system('modprobe w1-gpio')
-    os.system('modprobe w1-therm')
-except:
-    pass
-# Create functions to access temperature probe readings
-def read_temp_rawA():
-    device_file = '/sys/bus/w1/devices/28-04173060c6ff/w1_slave'
-    f = open(device_file, 'r')
-    lines = f.readlines()
-    f.close()
-    return lines
-
-def read_temp_rawB():
-    device_file = '/sys/bus/w1/devices/28-04173041b9ff/w1_slave'
-    f = open(device_file, 'r')
-    lines = f.readlines()
-    f.close()
-    return lines
-
-def read_temp_rawC():
-    device_file = '/sys/bus/w1/devices/28-0317302490ff/w1_slave'
-    f = open(device_file, 'r')
-    lines = f.readlines()
-    f.close()
-    return lines
-
-# I prefer metric when possible
-def read_tempA():
-    lines = read_temp_rawA()
-    while lines[0].strip()[-3:] != 'YES':
-        time.sleep(0.2)
-        lines = read_temp_rawA()
-    equals_pos = lines[1].find('t=')
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos+2:]
-        temp_c = float(temp_string) / 1000.0
-        temp_f = temp_c * 9.0 / 5.0 + 32.0
-        return temp_c
-
-def read_tempB():
-    lines = read_temp_rawB()
-    while lines[0].strip()[-3:] != 'YES':
-        time.sleep(0.2)
-        lines = read_temp_rawB()
-    equals_pos = lines[1].find('t=')
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos+2:]
-        temp_c = float(temp_string) / 1000.0
-        temp_f = temp_c * 9.0 / 5.0 + 32.0
-        return temp_c
-def read_tempC():
-    lines = read_temp_rawC()
-    while lines[0].strip()[-3:] != 'YES':
-        time.sleep(0.2)
-        lines = read_temp_rawC()
-    equals_pos = lines[1].find('t=')
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos+2:]
-        temp_c = float(temp_string) / 1000.0
-        temp_f = temp_c * 9.0 / 5.0 + 32.0
-        return temp_c
-
-'''
-to_print = read_tempC()
-print "Temp is: % .2f  C" % to_print
-sys.exit(1)
-'''
-
-#operating stats of Raspberry Pi
+#operating stats of linux server
 def getCPUtemperature():
     res = os.popen('vcgencmd measure_temp').readline()
     return(res.replace("temp=","").replace("'C\n",""))
@@ -131,7 +58,13 @@ scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 
 # access JSON credentials file provided by Google API
-credentials = ServiceAccountCredentials.from_json_keyfile_name('FarmSensor-dc6049b112a2.json', scope)
+ac_name = 'FarmSensor-dc6049b112a2.json'
+try:
+    gc = gspread.service_account(filename=ac_name)
+except Exception:
+    from oauth2client.service_account import ServiceAccountCredentials
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(ac_name, scope)
+    gc = gspread.authorize(credentials)
 
 '''
 # Test code
@@ -147,10 +80,10 @@ sys.exit(1)
 #Connecting to Google Docs to write first measurement to spreadsheet
 def login_open_sheet(spreadsheet):
     try:
-        gc = gspread.authorize(credentials)
+        
         worksheet = gc.open(spreadsheet).sheet1
         return worksheet
-    except:
+    except Exception:
         print('Unable to login and get spreadsheet.  Check credentials, spreadsheet name.')
 
 # written this way for a code that was supposed to time.sleep() itself between logs
@@ -161,34 +94,25 @@ if worksheet is None:
 # Record data from system and sensors
 try:
     memoryUsage = os.popen('''awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{print 100-100*a/t"%"}' /proc/meminfo''').readline().replace("\n","")
-except:
+except Exception:
     memoryUsage = 'Error'
 try:
     CPU_temp = getCPUtemperature()
-except:
+except Exception:
     CPU_temp = "Error"
 try:
     CPU_Pct=str(round(float(os.popen('''grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage }' ''').readline()),2))
-except:
+except Exception:
     CPU_Pct = "Error"
 try:
     DISK_stats = getDiskSpace()
     DISK_used = (DISK_stats[1])
-except:
+except Exception:
     DISK_used = "Error"
-try:
-    tempA = read_tempA()
-except:
-    tempA = "Error"
-try:
-    tempB = read_tempB()
-except:
-    tempB = "Error"
-try:
-    tempC = read_tempC()
-except:
-    tempC = "Error"
 
+tempA = "Error"
+tempB = "Error"
+tempC = "Error"
 ###########################################################
 # Part Two: Accessing internet loaded data
 
@@ -201,13 +125,12 @@ def ConfigSectionMap(section):
             dict1[option] = Config.get(section, option)
             if dict1[option] == -1:
                 print("skip: %s" % option)
-        except:
+        except Exception:
             print("exception on %s!" % option)
             dict1[option] = None
     return dict1
 
 # get keys from the environment file
-# it would be much easier to just type SE_apiKey = 'XXXXXX' but this harder way keeps off github
 Config = configparser.ConfigParser()
 # Env file location on laptop versus raspberry
 #Config.read(r"C:\Users\Owner\Documents\Personal\Projects\WeatherStation\keyFiles.ini")
@@ -230,7 +153,7 @@ SE_energy_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/energy
 # Watt hours
 try:
     solar_daily_watt_hours = requests.get(SE_energy_url).json()['energy']['values'][0]['value']
-except:
+except Exception:
     solar_daily_watt_hours = "Error"
 if solar_daily_watt_hours == None:
     solar_daily_watt_hours = 0
@@ -240,7 +163,7 @@ SE_power_url = "https://monitoringapi.solaredge.com/site/" + SE_site + "/overvie
 # in Watts
 try:
     solar_current_watts = requests.get(SE_power_url).json()['overview']['currentPower']['power']
-except:
+except Exception:
     solar_current_watts = "Error"
 if solar_current_watts == None:
     solar_current_watts = 0
@@ -251,7 +174,7 @@ endTime = endDate + "%20" + str(datetime.datetime.now().hour) + ":" + str(dateti
 SE_power_urlALT = "https://monitoringapi.solaredge.com/site/" + SE_site + "/power.json?startTime=" + startTime + "&endTime=" + endTime + "&api_key=" + SE_apiKey
 try:
     solar_current_wattsALT = requests.get(SE_power_urlALT).json()['power']['values'][0]['value']
-except:
+except Exception:
     solar_current_wattsALT = "Error"
 if solar_current_wattsALT == None:
     solar_current_wattsALT = 0
@@ -262,7 +185,7 @@ AW_url = "https://api.ambientweather.net/v1/devices?apiKey=" + AW_apiKey + "&&ap
 try:
     station = requests.get(AW_url)
     station_dict = station.json()
-except:
+except Exception:
     #fake JSON to collect errors, probably inefficient but it works
     station_dict = [{"macAddress":"Something","lastData":{"dateutc":"Error","winddir":"Error","windspeedmph":"Error","windgustmph":"Error","maxdailygust":"Error","tempf":"Error","hourlyrainin":"Error","eventrainin":"Error","dailyrainin":"Error","weeklyrainin":"Error","monthlyrainin":"Error","totalrainin":"Error","baromrelin":"Error","baromabsin":"Error","humidity":"Error","tempinf":"Error","humidityin":"Error","uv":"Error","solarradiation":"Error","feelsLike":"Error","dewPoint":"Error","lastRain":"Error","date":"Error"},"info":{"name":"FarmSensorNet","location":"Wabasha"}}]
 station_winddir = station_dict[0]['lastData']['winddir'] #compass degrees
@@ -286,7 +209,7 @@ station_tempinf = station_dict[0]['lastData']['tempinf'] #indoor temperature
 try:
     station_tempinC = round((((station_tempinf) - 32.0) * (0.5555555556)),1) # to Celsius for consistency
     station_tempC =  round((((station_tempf) - 32.0) * (0.5555555556)),1) # to Celsius for consistency
-except:
+except Exception:
     station_tempinC = "Error"
     station_tempC = 'Error'
 station_humidityin = station_dict[0]['lastData']['humidityin'] #indoor humidity
@@ -315,7 +238,7 @@ try:
         if varName == 'Streamflow, ft&#179;/s':
             zumbro_discharge = float(zumbro_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # cubic feet per second
 
-except:
+except Exception:
     zumbro_water_temp = "Error"
     zumbro_discharge = "Error"
     zumbro_gage_height = "Error"
@@ -338,7 +261,7 @@ try:
         if varName == 'Streamflow, ft&#179;/s':
             reads_discharge = float(reads_dict['value']['timeSeries'][num_vars]['values'][0]['value'][0]['value']) # cubic feet per second
 
-except:
+except Exception:
     reads_water_temp = "Error"
     reads_discharge = "Error"
     reads_gage_height = "Error"
@@ -397,7 +320,7 @@ try:
     worksheet.update_acell("AP{}".format(next_row), station_dateutc)
     
     #worksheet.append_row((datetime.datetime.now(),"test", read_tempA(), read_tempB(), read_tempC()))
-except:
+except Exception:
     # Error appending data, most likely because credentials are stale.
     # Null out the worksheet so a login is performed at the top of the loop.
     print('Append error')
@@ -418,7 +341,7 @@ try:
                 station_monthlyrainin,station_totalrainin,station_baromrelin,station_baromabsin,
                 station_humidity, station_tempinC,station_humidityin,station_uv,station_solarradiation,
                 station_feelsLike,station_dewPoint,station_lastRain,station_date,station_dateutc))
-except:
+except Exception:
     with open("FiveteenMinuteData.csv", "a") as myfile:
         myfile.write("\n{}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"log error"))
 
