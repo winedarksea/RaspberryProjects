@@ -1,4 +1,4 @@
-# This is scheduled to run every fiveteen minutes by Cron on the Raspberry
+# This is scheduled to run every fiveteen minutes by Cron on the a server
 
 ### To Google Sheets and temperature probe operation
 # Reference: https://www.raspberrypi.org/forums/viewtopic.php?t=104169
@@ -24,8 +24,10 @@ import datetime
 import os
 import gspread
 import configparser as configparser
-# import configparser
 import requests
+
+# set to True to test
+test_run = False
 
 os.chdir("/home/colin/FarmLog")
 
@@ -80,7 +82,6 @@ sys.exit(1)
 #Connecting to Google Docs to write first measurement to spreadsheet
 def login_open_sheet(spreadsheet):
     try:
-        
         worksheet = gc.open(spreadsheet).sheet1
         return worksheet
     except Exception:
@@ -110,9 +111,9 @@ try:
 except Exception:
     DISK_used = "Error"
 
-tempA = "Error"
-tempB = "Error"
-tempC = "Error"
+tempA = "Deprecated"
+tempB = "Deprecated"
+tempC = "Deprecated"
 ###########################################################
 # Part Two: Accessing internet loaded data
 
@@ -227,10 +228,10 @@ try:
     zumbro = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05374900&format=json')
     zumbro_dict = zumbro.json()
     
-    zumbro_water_temp = "Error"
-    zumbro_discharge = "Error"
-    zumbro_gage_height = "Error"
-    zumbro_turbidity = "Error"
+    zumbro_water_temp = "Deprecated"
+    zumbro_discharge = "Deprecated"
+    zumbro_gage_height = "Deprecated"
+    zumbro_turbidity = "Deprecated"
     for num_vars in range(len(zumbro_dict['value']['timeSeries'])):
         varName = zumbro_dict['value']['timeSeries'][num_vars]['variable']['variableName']
         if varName == 'Gage height, ft':
@@ -250,10 +251,10 @@ try:
     reads = requests.get('https://waterservices.usgs.gov/nwis/iv/?sites=05355260&format=json')
     reads_dict = reads.json()
     
-    reads_water_temp = "Error"
-    reads_discharge = "Error"
-    reads_gage_height = "Error"
-    reads_sensor_velocity = "Error"
+    reads_water_temp = "Deprecated"
+    reads_discharge = "Deprecated"
+    reads_gage_height = "Deprecated"
+    reads_sensor_velocity = "Deprecated"
     for num_vars in range(len(reads_dict['value']['timeSeries'])):
         varName = reads_dict['value']['timeSeries'][num_vars]['variable']['variableName']
         if varName == 'Gage height, ft':
@@ -273,66 +274,71 @@ except Exception:
 # Part Three: Upload
 # Now upload all the data to the Google Sheet
 # it's a bit slower than 'append row' but also more flexible to edit
-try:
-    next_row = next_available_row(worksheet)
-    worksheet.append_row(["temp"])
-    worksheet.update_acell("A{}".format(next_row), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    worksheet.update_acell("B{}".format(next_row), "prod1")
-    worksheet.update_acell("C{}".format(next_row), memoryUsage)
-    worksheet.update_acell("D{}".format(next_row), CPU_Pct)
-    worksheet.update_acell("E{}".format(next_row), DISK_used)
-    worksheet.update_acell("F{}".format(next_row), tempA)
-    worksheet.update_acell("G{}".format(next_row), tempB)
-    worksheet.update_acell("H{}".format(next_row), tempC)
-    worksheet.update_acell("I{}".format(next_row), solar_daily_watt_hours)
-    worksheet.update_acell("J{}".format(next_row), solar_current_watts)
-    worksheet.update_acell("K{}".format(next_row), solar_current_wattsALT)
-    worksheet.update_acell("L{}".format(next_row), reads_water_temp)
-    worksheet.update_acell("M{}".format(next_row), reads_discharge)
-    worksheet.update_acell("N{}".format(next_row), reads_gage_height)
-    worksheet.update_acell("O{}".format(next_row), reads_sensor_velocity)
-    worksheet.update_acell("P{}".format(next_row), zumbro_water_temp)
-    worksheet.update_acell("Q{}".format(next_row), zumbro_discharge)
-    worksheet.update_acell("R{}".format(next_row), zumbro_gage_height)
-    worksheet.update_acell("S{}".format(next_row), zumbro_turbidity)
-    worksheet.update_acell("T{}".format(next_row), station_winddir)
-    worksheet.update_acell("U{}".format(next_row), station_windspeedmph)
-    worksheet.update_acell("V{}".format(next_row), station_windgustmph)
-    worksheet.update_acell("W{}".format(next_row), station_maxdailygust)
-    worksheet.update_acell("X{}".format(next_row), station_tempC)
-    worksheet.update_acell("Y{}".format(next_row), station_hourlyrainin)
-    worksheet.update_acell("Z{}".format(next_row), station_eventrainin)
-    worksheet.update_acell("AA{}".format(next_row), station_dailyrainin)
-    worksheet.update_acell("AB{}".format(next_row), station_weeklyrainin)
-    worksheet.update_acell("AC{}".format(next_row), station_monthlyrainin)
-    worksheet.update_acell("AD{}".format(next_row), station_totalrainin)
-    worksheet.update_acell("AE{}".format(next_row), station_baromrelin)
-    worksheet.update_acell("AF{}".format(next_row), station_baromabsin)
-    worksheet.update_acell("AG{}".format(next_row), station_humidity)
-    worksheet.update_acell("AH{}".format(next_row), station_tempinC)
-    worksheet.update_acell("AI{}".format(next_row), station_humidityin)
-    worksheet.update_acell("AJ{}".format(next_row), station_uv)
-    worksheet.update_acell("AK{}".format(next_row), station_solarradiation)
-    worksheet.update_acell("AL{}".format(next_row), station_feelsLike)
-    worksheet.update_acell("AM{}".format(next_row), station_dewPoint)
-    worksheet.update_acell("AN{}".format(next_row), station_lastRain)
-    worksheet.update_acell("AO{}".format(next_row), station_date)
-    worksheet.update_acell("AP{}".format(next_row), station_dateutc)
-    
-    #worksheet.append_row((datetime.datetime.now(),"test", read_tempA(), read_tempB(), read_tempC()))
-except Exception:
-    # Error appending data, most likely because credentials are stale.
-    # Null out the worksheet so a login is performed at the top of the loop.
-    print('Append error')
-    worksheet = None
+if not test_run:
+    try:
+        next_row = next_available_row(worksheet)
+        worksheet.append_row(["temp"])
+        worksheet.update_acell("A{}".format(next_row), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        worksheet.update_acell("B{}".format(next_row), "prod3")
+        worksheet.update_acell("C{}".format(next_row), memoryUsage)
+        worksheet.update_acell("D{}".format(next_row), CPU_Pct)
+        worksheet.update_acell("E{}".format(next_row), DISK_used)
+        worksheet.update_acell("F{}".format(next_row), tempA)
+        worksheet.update_acell("G{}".format(next_row), tempB)
+        worksheet.update_acell("H{}".format(next_row), tempC)
+        worksheet.update_acell("I{}".format(next_row), solar_daily_watt_hours)
+        worksheet.update_acell("J{}".format(next_row), solar_current_watts)
+        worksheet.update_acell("K{}".format(next_row), solar_current_wattsALT)
+        worksheet.update_acell("L{}".format(next_row), reads_water_temp)
+        worksheet.update_acell("M{}".format(next_row), reads_discharge)
+        worksheet.update_acell("N{}".format(next_row), reads_gage_height)
+        worksheet.update_acell("O{}".format(next_row), reads_sensor_velocity)
+        worksheet.update_acell("P{}".format(next_row), zumbro_water_temp)
+        worksheet.update_acell("Q{}".format(next_row), zumbro_discharge)
+        worksheet.update_acell("R{}".format(next_row), zumbro_gage_height)
+        worksheet.update_acell("S{}".format(next_row), zumbro_turbidity)
+        worksheet.update_acell("T{}".format(next_row), station_winddir)
+        worksheet.update_acell("U{}".format(next_row), station_windspeedmph)
+        worksheet.update_acell("V{}".format(next_row), station_windgustmph)
+        worksheet.update_acell("W{}".format(next_row), station_maxdailygust)
+        worksheet.update_acell("X{}".format(next_row), station_tempC)
+        worksheet.update_acell("Y{}".format(next_row), station_hourlyrainin)
+        worksheet.update_acell("Z{}".format(next_row), station_eventrainin)
+        worksheet.update_acell("AA{}".format(next_row), station_dailyrainin)
+        worksheet.update_acell("AB{}".format(next_row), station_weeklyrainin)
+        worksheet.update_acell("AC{}".format(next_row), station_monthlyrainin)
+        worksheet.update_acell("AD{}".format(next_row), station_totalrainin)
+        worksheet.update_acell("AE{}".format(next_row), station_baromrelin)
+        worksheet.update_acell("AF{}".format(next_row), station_baromabsin)
+        worksheet.update_acell("AG{}".format(next_row), station_humidity)
+        worksheet.update_acell("AH{}".format(next_row), station_tempinC)
+        worksheet.update_acell("AI{}".format(next_row), station_humidityin)
+        worksheet.update_acell("AJ{}".format(next_row), station_uv)
+        worksheet.update_acell("AK{}".format(next_row), station_solarradiation)
+        worksheet.update_acell("AL{}".format(next_row), station_feelsLike)
+        worksheet.update_acell("AM{}".format(next_row), station_dewPoint)
+        worksheet.update_acell("AN{}".format(next_row), station_lastRain)
+        worksheet.update_acell("AO{}".format(next_row), station_date)
+        worksheet.update_acell("AP{}".format(next_row), station_dateutc)
+        
+        #worksheet.append_row((datetime.datetime.now(),"test", read_tempA(), read_tempB(), read_tempC()))
+    except Exception:
+        # Error appending data, most likely because credentials are stale.
+        # Null out the worksheet so a login is performed at the top of the loop.
+        print('Append error')
+        worksheet = None
 
 
+if not test_run:
+    output_file = "FiveteenMinuteData.csv"
+else:
+    output_file = 'weather_test.csv'
 
 # Record to local storage as well
 try:
-    with open("FiveteenMinuteData.csv", "a") as myfile:
+    with open(output_file, "a") as myfile:
         myfile.write("\n{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"test2", memoryUsage, CPU_Pct,
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"prod3", memoryUsage, CPU_Pct,
                 DISK_used, tempA, tempB, tempC,solar_daily_watt_hours,solar_current_watts,
                 reads_water_temp,reads_discharge,zumbro_gage_height,reads_sensor_velocity,
                 zumbro_water_temp, zumbro_discharge,zumbro_gage_height,zumbro_turbidity,
@@ -342,7 +348,7 @@ try:
                 station_humidity, station_tempinC,station_humidityin,station_uv,station_solarradiation,
                 station_feelsLike,station_dewPoint,station_lastRain,station_date,station_dateutc))
 except Exception:
-    with open("FiveteenMinuteData.csv", "a") as myfile:
+    with open(output_file, "a") as myfile:
         myfile.write("\n{}, {}".format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"log error"))
 
 # Just to be clear:
