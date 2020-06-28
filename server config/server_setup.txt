@@ -1,0 +1,101 @@
+# install Ubuntu, new user that isn't root
+
+# update
+sudo apt update
+sudo apt upgrade
+
+# setup system firewall
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw enable
+sudo ufw allow ssh
+sudo ufw status verbose
+
+# setup fail2ban
+sudo apt install fail2ban
+
+# setup ssh
+# I won't be exposing SSH to the public internet (only behind the vpn)
+sudo apt install openssh-server
+sudo systemctl status ssh
+
+# dynamic dns with ddclient
+sudo apt install ddclient
+# might be under /etc/ddclient/ddclient.conf
+sudo nano /etc/ddclient.conf
+# details of that file for my use:
+	protocol=googledomains
+	use=web, web=dyndns
+	server=domains.google.com
+	ssl=yes
+	login=*********
+	password='*********'
+	example.example.com
+
+# samba share drives (using ubuntu GUI)
+
+# python for my python scripts
+# download miniconda and install
+conda install pandas  # 1.0.5
+pip install gspread  # 3.6.0
+pip install PyPDF4   # 1.27.0
+sudo apt install default-jre
+pip install tabula-py  # 2.1.1
+
+crontab -e
+# Add these:
+	*/15 * * * * /home/colin/miniconda3/bin/python /home/colin/FarmLog/fiveteenMinuteLog.py
+	35 09 * * * /home/colin/miniconda3/bin/python /home/colin/UCI_pdf_reader/UCI_pdf_reader.py
+
+# if you have "system problem detected" popups
+sudo rm /var/crash/*
+# set to enabled=0 to stop all the popups
+sudo gedit /etc/default/apport &
+
+# Install Wireguard, add-repository is necessary with <18.04
+sudo apt install wireguard
+
+# deploy configuration file wg0.conf (find examples online)
+sudo nano /etc/wireguard/wg0.conf
+# make sure eth0 in PostUp/PostDown is set to the network adapter in use
+ip -o -4 route show to default | awk '{print $5}'
+# new key if needed for a new client
+wg genkey | tee privatekey | wg pubkey > publickey
+
+# for wireguard this was required on the current server but not on a previous:
+sudo nano /etc/sysctl.conf
+# uncomment or add the following:
+	net.ipv4.ip_forward=1
+	net.ipv6.conf.all.forwarding=1
+sudo sysctl -p     # restarts
+
+# start the service
+sudo ufw allow 51820/udp
+wg-quick up wg0
+sudo systemctl enable wg-quick@wg0
+sudo wg show
+
+
+# Nextcloud if used
+sudo snap install nextcloud
+snap info nextcloud
+sudo nextcloud.manual-install username verysecurepassword
+sudo ufw allow 80,443/tcp
+sudo nextcloud.occ config:system:set trusted_domains 1 --value=example.com
+sudo nextcloud.occ config:system:set trusted_domains 2 --value=your.local.ip
+# configure email service and install apps
+# run the following once/if ports 80 and 443 are publically exposed
+sudo nextcloud.enable-https lets-encrypt
+
+
+# make sure 'automatic security updates' is on in Gnome, or else:
+# sudo apt install unattended-upgrades
+# sudo unattended-upgrades --dry-run --debug
+
+# make sure router password is not a generic default
+# router give device fixed IP address by mac address
+# port forward to this device on 51820  (80 and 443 for Nextcloud public)
+# confirm ddns, vpn, python, ssh, shared network drive
+# test vpn off network, all clients make sure IP address changes
+# schedule backup to HDD if desired
+
