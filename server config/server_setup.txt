@@ -31,6 +31,8 @@ sudo nano /etc/ddclient.conf
 	login=*********
 	password='*********'
 	example.example.com
+# test
+sudo ddclient -daemon=0 -debug -verbose -noquiet
 
 # samba share drives (using ubuntu GUI)
 
